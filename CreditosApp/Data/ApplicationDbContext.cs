@@ -10,6 +10,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<SolicitudCredito> SolicitudesCredito => Set<SolicitudCredito>();
 
+    public DbSet<Notificacion> Notificaciones => Set<Notificacion>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -42,6 +44,24 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany(c => c.Solicitudes)
                 .HasForeignKey(s => s.ClienteId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Notificacion>(entity =>
+        {
+            entity.Property(n => n.MessageId)
+                .HasColumnType("TEXT");
+
+            entity.Property(n => n.UsuarioId)
+                .HasMaxLength(450);
+
+            entity.Property(n => n.Texto)
+                .HasMaxLength(500);
+
+            entity.HasIndex(n => n.MessageId)
+                .IsUnique();
+
+            entity.HasIndex(n => n.UsuarioId);
+            entity.HasIndex(n => n.SolicitudId);
         });
     }
 }

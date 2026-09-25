@@ -1,0 +1,54 @@
+@model List<CreditosApp.Models.Notificacion>
+@{
+    ViewData["Title"] = "Mis Notificaciones";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Mis Notificaciones</h1>
+        <p class="text-secondary mb-0">Consulta las notificaciones asociadas a tu cuenta.</p>
+    </div>
+    <a asp-controller="Solicitudes" asp-action="Index" class="btn btn-outline-secondary">Volver a Mis Solicitudes</a>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="h4 mb-0">Notificaciones encontradas</h2>
+    <span class="badge text-bg-secondary">@Model.Count</span>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info" role="status">
+        Todavía no tienes notificaciones.
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Fecha de procesamiento</th>
+                        <th scope="col">Solicitud</th>
+                        <th scope="col">Notificación</th>
+                        <th scope="col" class="text-end">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var notificacion in Model)
+                {
+                    <tr>
+                        <td>@notificacion.FechaProcesamientoUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>#@notificacion.SolicitudId</td>
+                        <td>@notificacion.Texto</td>
+                        <td class="text-end">
+                            <a asp-controller="Solicitudes" asp-action="Detalle" asp-route-id="@notificacion.SolicitudId" class="btn btn-sm btn-outline-primary">Ver solicitud</a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

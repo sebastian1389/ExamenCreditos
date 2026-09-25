@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using CreditosApp.Data;
 using CreditosApp.Hubs;
+using CreditosApp.Messaging;
 using CreditosApp.Models;
 using CreditosApp.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -30,15 +31,21 @@ public class SolicitudesController : Controller
     private readonly ApplicationDbContext _context;
     private readonly IDistributedCache _cache;
     private readonly IHubContext<SolicitudesHub> _solicitudesHub;
+    private readonly ISolicitudRegistradaPublisher _solicitudRegistradaPublisher;
+    private readonly ILogger<SolicitudesController> _logger;
 
     public SolicitudesController(
         ApplicationDbContext context,
         IDistributedCache cache,
-        IHubContext<SolicitudesHub> solicitudesHub)
+        IHubContext<SolicitudesHub> solicitudesHub,
+        ISolicitudRegistradaPublisher solicitudRegistradaPublisher,
+        ILogger<SolicitudesController> logger)
     {
         _context = context;
         _cache = cache;
         _solicitudesHub = solicitudesHub;
+        _solicitudRegistradaPublisher = solicitudRegistradaPublisher;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index(SolicitudesIndexViewModel filtros)
@@ -249,6 +256,27 @@ public class SolicitudesController : Controller
         _context.SolicitudesCredito.Add(nuevaSolicitud);
 
         await _context.SaveChangesAsync();
+
+        var eventoSolicitudRegistrada = new SolicitudRegistradaMessage
+        {
+            MessageId = Guid.NewGuid(),
+            SolicitudId = nuevaSolicitud.Id,
+            UsuarioId = usuarioId,
+            FechaEventoUtc = DateTime.UtcNow
+        };
+
+        try
+        {
+            await _solicitudRegistradaPublisher.PublishAsync(eventoSolicitudRegistrada, HttpContext.RequestAborted);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _logger.LogError(
+                exception,
+                "No se pudo publicar el evento SolicitudRegistrada de la solicitud {SolicitudId}.",
+                nuevaSolicitud.Id);
+        }
+
         await InvalidarCacheSolicitudesAsync(usuarioId);
 
         TempData["SuccessMessage"] = "La solicitud de crédito se registró correctamente.";
