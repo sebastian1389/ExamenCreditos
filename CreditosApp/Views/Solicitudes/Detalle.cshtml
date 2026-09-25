@@ -10,6 +10,15 @@
     };
 }
 
+@if (TempData["SuccessMessage"] is string successMessage && !string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success" role="status">@successMessage</div>
+}
+@if (TempData["ErrorMessage"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
         <h1 class="h2 mb-1">Detalle de la solicitud</h1>
@@ -63,3 +72,36 @@
         </dl>
     </div>
 </div>
+
+@if (User.IsInRole("Analista"))
+{
+    <div class="card mt-4">
+        <div class="card-body">
+            <h2 class="h5">Actualizar estado</h2>
+            <form asp-controller="Solicitudes" asp-action="ActualizarEstado" method="post">
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="mb-3">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select id="estado" name="estado" class="form-select">
+                        @foreach (var estado in Enum.GetValues<EstadoSolicitud>())
+                        {
+                            if (Model.Estado == estado)
+                            {
+                                <option value="@estado" selected>@estado</option>
+                            }
+                            else
+                            {
+                                <option value="@estado">@estado</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="motivoRechazo" class="form-label">Motivo de rechazo</label>
+                    <textarea id="motivoRechazo" name="motivoRechazo" class="form-textarea" rows="3">@Model.MotivoRechazo</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar estado</button>
+            </form>
+        </div>
+    </div>
+}

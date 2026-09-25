@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+@using CreditosApp.Controllers
+@using Microsoft.AspNetCore.Http
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -28,9 +31,20 @@
                         </li>
                         @if (User.Identity?.IsAuthenticated == true)
                         {
+                            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                            var ultimaSolicitudId = Context.Session.GetInt32(SolicitudesController.UltimaSolicitudIdSessionKey);
+                            var ultimaSolicitudMonto = Context.Session.GetString(SolicitudesController.UltimaSolicitudMontoSessionKey);
+                            var ultimaSolicitudUsuarioId = Context.Session.GetString(SolicitudesController.UltimaSolicitudUsuarioIdSessionKey);
+
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Solicitudes" asp-action="Index">Mis Solicitudes</a>
                             </li>
+                            @if (ultimaSolicitudId.HasValue && !string.IsNullOrWhiteSpace(usuarioId) && !string.IsNullOrWhiteSpace(ultimaSolicitudMonto) && ultimaSolicitudUsuarioId == usuarioId)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Solicitudes" asp-action="Detalle" asp-route-id="@ultimaSolicitudId.Value">Ver última solicitud @ultimaSolicitudMonto</a>
+                                </li>
+                            }
                         }
                     </ul>
                     <partial name="_LoginPartial" />

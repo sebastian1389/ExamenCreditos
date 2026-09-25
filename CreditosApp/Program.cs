@@ -16,6 +16,25 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();
 
+var redisConnectionString = builder.Configuration["REDIS_CONNECTION_STRING"]
+    ?? builder.Configuration["Redis:ConnectionString"]
+    ?? builder.Configuration.GetConnectionString("Redis")
+    ?? throw new InvalidOperationException("Redis connection string not found.");
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnectionString;
+    options.InstanceName = "CreditosApp:";
+});
+
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = ".CreditosApp.Session";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -106,6 +125,7 @@ else
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();
