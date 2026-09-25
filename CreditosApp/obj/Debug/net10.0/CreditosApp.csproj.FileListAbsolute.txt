@@ -25,13 +25,16 @@ D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.Design.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.Relational.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.Sqlite.dll
+D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\Microsoft.Extensions.Caching.StackExchangeRedis.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\Microsoft.Extensions.DependencyModel.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\Microsoft.VisualStudio.SolutionPersistence.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\Mono.TextTemplating.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\Newtonsoft.Json.dll
+D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\Pipelines.Sockets.Unofficial.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\SQLitePCLRaw.batteries_v2.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\SQLitePCLRaw.core.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\SQLitePCLRaw.provider.e_sqlite3.dll
+D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\StackExchange.Redis.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\System.CodeDom.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\System.Composition.AttributedModel.dll
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\bin\Debug\net10.0\System.Composition.Convention.dll
@@ -206,7 +209,6 @@ D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net10.0\compressed\yfc7ypekbg-{0}-mlv21k5csn-mlv21k5csn.gz
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net10.0\compressed\j54ww39hn4-{0}-b9sayid5wm-b9sayid5wm.gz
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net10.0\compressed\xkblwsjpmm-{0}-61n19gt1b8-61n19gt1b8.gz
-D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net10.0\compressed\rqwwkv37ko-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net10.0\compressed\3ovvi5a3c0-{0}-bqjiyaj88i-bqjiyaj88i.gz
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net10.0\compressed\irkrsb94sj-{0}-c2jlpeoesf-c2jlpeoesf.gz
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net10.0\compressed\26y3jlx23b-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -279,3 +281,4 @@ D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net10.0\CreditosApp.pdb
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net10.0\CreditosApp.genruntimeconfig.cache
 D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net10.0\ref\CreditosApp.dll
+D:\USMP\PROGRAMACION I\WWW\MasterStudio\ExamenCreditos\CreditosApp\obj\Debug\net10.0\compressed\rqwwkv37ko-{0}-zfo8ed9hgg-zfo8ed9hgg.gz
