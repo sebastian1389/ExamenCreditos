@@ -101,6 +101,104 @@ public class SolicitudesController : Controller
         return View(solicitud);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Create()
+    {
+        var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(usuarioId))
+        {
+            return Challenge();
+        }
+
+        var solicitud = new SolicitudCreditoCreateViewModel();
+        await CargarClientesActivosAsync(solicitud, usuarioId);
+
+        if (solicitud.Clientes.Count == 0)
+        {
+            ModelState.AddModelError(string.Empty, "No tienes clientes activos registrados.");
+        }
+
+        return View(solicitud);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(SolicitudCreditoCreateViewModel solicitud)
+    {
+        var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(usuarioId))
+        {
+            return Challenge();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            TempData["ErrorMessage"] = "No se pudo registrar la solicitud. Revisa los datos ingresados.";
+            await CargarClientesActivosAsync(solicitud, usuarioId);
+            return View(solicitud);
+        }
+
+        var clienteId = solicitud.ClienteId!.Value;
+        var cliente = await _context.Clientes
+            .AsNoTracking()
+            .SingleOrDefaultAsync(c => c.Id == clienteId && c.UsuarioId == usuarioId && c.Activo);
+
+        if (cliente is null)
+        {
+            const string mensaje = "El cliente seleccionado no existe o no está activo.";
+            TempData["ErrorMessage"] = mensaje;
+            ModelState.AddModelError(nameof(solicitud.ClienteId), mensaje);
+            await CargarClientesActivosAsync(solicitud, usuarioId);
+            return View(solicitud);
+        }
+
+        var montoMaximo = cliente.IngresosMensuales * 10m;
+        if (solicitud.MontoSolicitado!.Value > montoMaximo)
+        {
+            var mensaje = $"El monto solicitado no puede superar 10 veces tus ingresos mensuales ({montoMaximo:C}).";
+            TempData["ErrorMessage"] = mensaje;
+            ModelState.AddModelError(nameof(solicitud.MontoSolicitado), mensaje);
+            await CargarClientesActivosAsync(solicitud, usuarioId);
+            return View(solicitud);
+        }
+
+        var tieneSolicitudPendiente = await _context.SolicitudesCredito
+            .AsNoTracking()
+            .AnyAsync(s => s.ClienteId == cliente.Id && s.Estado == EstadoSolicitud.Pendiente);
+
+        if (tieneSolicitudPendiente)
+        {
+            const string mensaje = "El cliente seleccionado ya tiene una solicitud en estado Pendiente.";
+            TempData["ErrorMessage"] = mensaje;
+            ModelState.AddModelError(nameof(solicitud.ClienteId), mensaje);
+            await CargarClientesActivosAsync(solicitud, usuarioId);
+            return View(solicitud);
+        }
+
+        _context.SolicitudesCredito.Add(new SolicitudCredito
+        {
+            ClienteId = cliente.Id,
+            MontoSolicitado = solicitud.MontoSolicitado.Value,
+            FechaSolicitud = DateTime.Now,
+            Estado = EstadoSolicitud.Pendiente,
+            MotivoRechazo = null
+        });
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "La solicitud de crédito se registró correctamente.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    private async Task CargarClientesActivosAsync(SolicitudCreditoCreateViewModel solicitud, string usuarioId)
+    {
+        solicitud.Clientes = await _context.Clientes
+            .AsNoTracking()
+            .Where(c => c.UsuarioId == usuarioId && c.Activo)
+            .OrderBy(c => c.Id)
+            .ToListAsync();
+    }
+
     private void ValidarFiltros(SolicitudesIndexViewModel filtros)
     {
         if (filtros.MontoMin.HasValue && filtros.MontoMin.Value < 0)
