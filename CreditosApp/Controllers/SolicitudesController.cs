@@ -1,23 +1,37 @@
 using System;
+using System.Globalization;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using CreditosApp.Data;
 using CreditosApp.Models;
 using CreditosApp.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace CreditosApp.Controllers;
 
 [Authorize]
 public class SolicitudesController : Controller
 {
-    private readonly ApplicationDbContext _context;
+    public const string UltimaSolicitudIdSessionKey = "UltimaSolicitudId";
+    public const string UltimaSolicitudMontoSessionKey = "UltimaSolicitudMonto";
+    public const string UltimaSolicitudUsuarioIdSessionKey = "UltimaSolicitudUsuarioId";
 
-    public SolicitudesController(ApplicationDbContext context)
+    private const string CacheVersionPrefix = "Solicitudes:Version:";
+    private const string CacheListPrefix = "Solicitudes:List:";
+    private const int CacheDurationSeconds = 60;
+
+    private readonly ApplicationDbContext _context;
+    private readonly IDistributedCache _cache;
+
+    public SolicitudesController(ApplicationDbContext context, IDistributedCache cache)
     {
         _context = context;
+        _cache = cache;
     }
 
     public async Task<IActionResult> Index(SolicitudesIndexViewModel filtros)
@@ -37,10 +51,29 @@ public class SolicitudesController : Controller
             return Challenge();
         }
 
+        var cacheVersion = await GetCacheVersionAsync(usuarioId);
+        var cacheKey = GetCacheKey(usuarioId, cacheVersion, filtros);
+        var cachedValue = await _cache.GetStringAsync(cacheKey);
+
+        if (cachedValue is not null)
+        {
+            try
+            {
+                var cachedSolicitudes = JsonSerializer.Deserialize<List<SolicitudCredito>>(cachedValue);
+                if (cachedSolicitudes is not null)
+                {
+                    filtros.Solicitudes = cachedSolicitudes;
+                    return View(filtros);
+                }
+            }
+            catch (JsonException)
+            {
+                await _cache.RemoveAsync(cacheKey);
+            }
+        }
+
         var consulta = _context.SolicitudesCredito
             .AsNoTracking()
-            .Include(s => s.Cliente)
-            .ThenInclude(c => c!.Usuario)
             .Where(s => s.Cliente!.UsuarioId == usuarioId);
 
         if (filtros.Estado.HasValue)
@@ -70,10 +103,28 @@ public class SolicitudesController : Controller
             consulta = consulta.Where(s => s.FechaSolicitud < fechaFinExclusiva);
         }
 
-        filtros.Solicitudes = await consulta
+        var solicitudes = await consulta
             .OrderByDescending(s => s.FechaSolicitud)
             .ThenByDescending(s => s.Id)
+            .Select(s => new SolicitudCredito
+            {
+                Id = s.Id,
+                ClienteId = s.ClienteId,
+                MontoSolicitado = s.MontoSolicitado,
+                FechaSolicitud = s.FechaSolicitud,
+                Estado = s.Estado,
+                MotivoRechazo = s.MotivoRechazo
+            })
             .ToListAsync();
+
+        filtros.Solicitudes = solicitudes;
+        await _cache.SetStringAsync(
+            cacheKey,
+            JsonSerializer.Serialize(solicitudes),
+            new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(CacheDurationSeconds)
+            });
 
         return View(filtros);
     }
@@ -97,6 +148,10 @@ public class SolicitudesController : Controller
         {
             return NotFound();
         }
+
+        HttpContext.Session.SetInt32(UltimaSolicitudIdSessionKey, solicitud.Id);
+        HttpContext.Session.SetString(UltimaSolicitudMontoSessionKey, solicitud.MontoSolicitado.ToString("C"));
+        HttpContext.Session.SetString(UltimaSolicitudUsuarioIdSessionKey, usuarioId);
 
         return View(solicitud);
     }
@@ -175,19 +230,111 @@ public class SolicitudesController : Controller
             return View(solicitud);
         }
 
-        _context.SolicitudesCredito.Add(new SolicitudCredito
+        var nuevaSolicitud = new SolicitudCredito
         {
             ClienteId = cliente.Id,
             MontoSolicitado = solicitud.MontoSolicitado.Value,
             FechaSolicitud = DateTime.Now,
             Estado = EstadoSolicitud.Pendiente,
             MotivoRechazo = null
-        });
+        };
+
+        _context.SolicitudesCredito.Add(nuevaSolicitud);
 
         await _context.SaveChangesAsync();
+        await InvalidarCacheSolicitudesAsync(usuarioId);
 
         TempData["SuccessMessage"] = "La solicitud de crédito se registró correctamente.";
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Analista")]
+    public async Task<IActionResult> ActualizarEstado(int id, EstadoSolicitud estado, string? motivoRechazo)
+    {
+        var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(usuarioId))
+        {
+            return Challenge();
+        }
+
+        if (id <= 0 || !Enum.IsDefined(estado))
+        {
+            return BadRequest();
+        }
+
+        if (estado == EstadoSolicitud.Rechazado && string.IsNullOrWhiteSpace(motivoRechazo))
+        {
+            TempData["ErrorMessage"] = "Debes indicar el motivo del rechazo.";
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        var solicitud = await _context.SolicitudesCredito
+            .Include(s => s.Cliente)
+            .SingleOrDefaultAsync(s => s.Id == id && s.Cliente!.UsuarioId == usuarioId);
+
+        if (solicitud?.Cliente is null)
+        {
+            return NotFound();
+        }
+
+        solicitud.Estado = estado;
+        solicitud.MotivoRechazo = estado == EstadoSolicitud.Rechazado
+            ? motivoRechazo?.Trim()
+            : null;
+
+        await _context.SaveChangesAsync();
+        await InvalidarCacheSolicitudesAsync(usuarioId);
+
+        TempData["SuccessMessage"] = "El estado de la solicitud se actualizó correctamente.";
+        return RedirectToAction(nameof(Detalle), new { id });
+    }
+
+    private async Task<string> GetCacheVersionAsync(string usuarioId)
+    {
+        var versionKey = GetCacheVersionKey(usuarioId);
+        var cacheVersion = await _cache.GetStringAsync(versionKey);
+        if (!string.IsNullOrWhiteSpace(cacheVersion))
+        {
+            return cacheVersion;
+        }
+
+        cacheVersion = Guid.NewGuid().ToString("N");
+        await SetCacheVersionAsync(usuarioId, cacheVersion);
+        return cacheVersion;
+    }
+
+    private async Task SetCacheVersionAsync(string usuarioId, string cacheVersion)
+    {
+        await _cache.SetStringAsync(
+            GetCacheVersionKey(usuarioId),
+            cacheVersion,
+            new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(CacheDurationSeconds)
+            });
+    }
+
+    private static string GetCacheVersionKey(string usuarioId)
+    {
+        return $"{CacheVersionPrefix}{usuarioId}";
+    }
+
+    private static string GetCacheKey(string usuarioId, string cacheVersion, SolicitudesIndexViewModel filtros)
+    {
+        var estado = filtros.Estado?.ToString() ?? "todos";
+        var montoMin = filtros.MontoMin?.ToString(CultureInfo.InvariantCulture) ?? "todos";
+        var montoMax = filtros.MontoMax?.ToString(CultureInfo.InvariantCulture) ?? "todos";
+        var fechaInicio = filtros.FechaInicio?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "todas";
+        var fechaFin = filtros.FechaFin?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "todas";
+
+        return $"{CacheListPrefix}{usuarioId}:{cacheVersion}:{estado}:{montoMin}:{montoMax}:{fechaInicio}:{fechaFin}";
+    }
+
+    private async Task InvalidarCacheSolicitudesAsync(string usuarioId)
+    {
+        await _cache.RemoveAsync(GetCacheVersionKey(usuarioId));
     }
 
     private async Task CargarClientesActivosAsync(SolicitudCreditoCreateViewModel solicitud, string usuarioId)
