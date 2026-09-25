@@ -4,11 +4,13 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
 using CreditosApp.Data;
+using CreditosApp.Hubs;
 using CreditosApp.Models;
 using CreditosApp.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 
@@ -27,11 +29,16 @@ public class SolicitudesController : Controller
 
     private readonly ApplicationDbContext _context;
     private readonly IDistributedCache _cache;
+    private readonly IHubContext<SolicitudesHub> _solicitudesHub;
 
-    public SolicitudesController(ApplicationDbContext context, IDistributedCache cache)
+    public SolicitudesController(
+        ApplicationDbContext context,
+        IDistributedCache cache,
+        IHubContext<SolicitudesHub> solicitudesHub)
     {
         _context = context;
         _cache = cache;
+        _solicitudesHub = solicitudesHub;
     }
 
     public async Task<IActionResult> Index(SolicitudesIndexViewModel filtros)
@@ -272,9 +279,15 @@ public class SolicitudesController : Controller
 
         var solicitud = await _context.SolicitudesCredito
             .Include(s => s.Cliente)
-            .SingleOrDefaultAsync(s => s.Id == id && s.Cliente!.UsuarioId == usuarioId);
+            .SingleOrDefaultAsync(s => s.Id == id);
 
         if (solicitud?.Cliente is null)
+        {
+            return NotFound();
+        }
+
+        var propietarioUsuarioId = solicitud.Cliente.UsuarioId;
+        if (string.IsNullOrWhiteSpace(propietarioUsuarioId))
         {
             return NotFound();
         }
@@ -285,7 +298,16 @@ public class SolicitudesController : Controller
             : null;
 
         await _context.SaveChangesAsync();
-        await InvalidarCacheSolicitudesAsync(usuarioId);
+        await InvalidarCacheSolicitudesAsync(propietarioUsuarioId);
+
+        await _solicitudesHub.Clients.User(propietarioUsuarioId).SendAsync(
+            "SolicitudEstadoActualizado",
+            new
+            {
+                SolicitudId = solicitud.Id,
+                Estado = solicitud.Estado.ToString(),
+                MotivoRechazo = solicitud.MotivoRechazo
+            });
 
         TempData["SuccessMessage"] = "El estado de la solicitud se actualizó correctamente.";
         return RedirectToAction(nameof(Detalle), new { id });

@@ -27,10 +27,18 @@
     <a asp-controller="Solicitudes" asp-action="Index" class="btn btn-outline-secondary">Volver a Mis Solicitudes</a>
 </div>
 
-<div class="card">
+<div data-solicitudes-realtime-container>
+    <div class="d-flex align-items-center gap-2 mb-3" role="status" aria-live="polite">
+        <span id="solicitudesRealtimeStatusIndicator" class="badge rounded-pill bg-secondary">Conectando</span>
+        <span id="solicitudesRealtimeStatusText" class="small text-secondary">Conectando al canal de notificaciones...</span>
+    </div>
+    <div id="solicitudesRealtimeNotification" class="alert alert-info d-none" role="status" aria-live="polite"></div>
+</div>
+
+<div class="card" data-solicitud-realtime-detail="@Model.Id">
     <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
         <h2 class="h5 mb-0">Información de la solicitud</h2>
-        <span class="badge @estadoClass">@Model.Estado</span>
+        <span id="solicitudEstadoBadge" class="badge @estadoClass" data-solicitud-estado>@Model.Estado</span>
     </div>
     <div class="card-body">
         <dl class="row mb-0">
@@ -65,10 +73,10 @@
             <dd class="col-sm-8">@Model.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</dd>
 
             <dt class="col-sm-4">Estado</dt>
-            <dd class="col-sm-8">@Model.Estado</dd>
+            <dd class="col-sm-8" data-solicitud-estado-texto>@Model.Estado</dd>
 
             <dt class="col-sm-4">Motivo de rechazo</dt>
-            <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.MotivoRechazo) ? "No aplica" : Model.MotivoRechazo)</dd>
+            <dd class="col-sm-8" data-solicitud-motivo-rechazo>@(string.IsNullOrWhiteSpace(Model.MotivoRechazo) ? "No aplica" : Model.MotivoRechazo)</dd>
         </dl>
     </div>
 </div>
@@ -82,7 +90,7 @@
                 <input type="hidden" name="id" value="@Model.Id" />
                 <div class="mb-3">
                     <label for="estado" class="form-label">Estado</label>
-                    <select id="estado" name="estado" class="form-select">
+                    <select id="estado" name="estado" class="form-select" data-solicitud-estado-select>
                         @foreach (var estado in Enum.GetValues<EstadoSolicitud>())
                         {
                             if (Model.Estado == estado)
@@ -98,7 +106,7 @@
                 </div>
                 <div class="mb-3">
                     <label for="motivoRechazo" class="form-label">Motivo de rechazo</label>
-                    <textarea id="motivoRechazo" name="motivoRechazo" class="form-textarea" rows="3">@Model.MotivoRechazo</textarea>
+                    <textarea id="motivoRechazo" name="motivoRechazo" class="form-textarea" rows="3" data-solicitud-motivo-rechazo-input>@Model.MotivoRechazo</textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">Guardar estado</button>
             </form>

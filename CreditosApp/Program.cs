@@ -1,4 +1,5 @@
 using CreditosApp.Data;
+using CreditosApp.Hubs;
 using CreditosApp.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Home/AccessDenied";
 });
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
 
 var redisConnectionString = builder.Configuration["REDIS_CONNECTION_STRING"]
     ?? builder.Configuration["Redis:ConnectionString"]
@@ -129,11 +131,14 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseWebSockets();
 app.UseRouting();
 app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHub<SolicitudesHub>("/hubs/solicitudes");
 
 app.MapStaticAssets();
 

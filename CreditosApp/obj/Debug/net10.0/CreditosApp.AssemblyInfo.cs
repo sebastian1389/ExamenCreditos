@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CreditosApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a924d0c5aefb1b5c6f5df96bebe3e0367dda56b7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+af604735f43a2cdbcc3f10ab343038615e47be81")]
 [assembly: System.Reflection.AssemblyProductAttribute("CreditosApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CreditosApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

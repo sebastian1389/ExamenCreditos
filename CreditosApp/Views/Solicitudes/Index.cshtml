@@ -11,6 +11,14 @@
     <a asp-controller="Solicitudes" asp-action="Create" class="btn btn-primary">Nueva solicitud</a>
 </div>
 
+<div data-solicitudes-realtime-container>
+    <div class="d-flex align-items-center gap-2 mb-3" role="status" aria-live="polite">
+        <span id="solicitudesRealtimeStatusIndicator" class="badge rounded-pill bg-secondary">Conectando</span>
+        <span id="solicitudesRealtimeStatusText" class="small text-secondary">Conectando al canal de notificaciones...</span>
+    </div>
+    <div id="solicitudesRealtimeNotification" class="alert alert-info d-none" role="status" aria-live="polite"></div>
+</div>
+
 @if (TempData["SuccessMessage"] is string successMessage && !string.IsNullOrWhiteSpace(successMessage))
 {
     <div class="alert alert-success" role="status">@successMessage</div>
@@ -99,11 +107,11 @@ else
                         _ => "bg-secondary"
                     };
 
-                    <tr>
+                    <tr data-solicitud-id="@solicitud.Id">
                         <td>@solicitud.Id</td>
                         <td>@solicitud.FechaSolicitud.ToString("dd/MM/yyyy")</td>
                         <td>@solicitud.MontoSolicitado.ToString("C")</td>
-                        <td><span class="badge @estadoClass">@solicitud.Estado</span></td>
+                        <td><span class="badge @estadoClass" data-solicitud-estado>@solicitud.Estado</span></td>
                         <td class="text-end">
                             <a asp-controller="Solicitudes" asp-action="Detalle" asp-route-id="@solicitud.Id" class="btn btn-sm btn-outline-primary">Ver detalle</a>
                         </td>
