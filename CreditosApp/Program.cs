@@ -1,5 +1,6 @@
 using CreditosApp.Data;
 using CreditosApp.Hubs;
+using CreditosApp.Messaging;
 using CreditosApp.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
+builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
+builder.Services.AddSingleton<ISolicitudRegistradaPublisher, RabbitMqSolicitudRegistradaPublisher>();
+builder.Services.AddHostedService<NotificacionesConsumer>();
 
 var redisConnectionString = builder.Configuration["REDIS_CONNECTION_STRING"]
     ?? builder.Configuration["Redis:ConnectionString"]
