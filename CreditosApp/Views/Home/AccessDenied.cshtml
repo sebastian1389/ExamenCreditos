@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Acceso denegado";
+}
+
+<div class="text-center py-5">
+    <h1 class="h2 text-warning-emphasis">Acceso denegado</h1>
+    <div class="alert alert-warning" role="alert">
+        Tu cuenta no tiene permisos para realizar esta operación.
+    </div>
+    <p class="text-secondary">Si consideras que se trata de un error, comunícate con el administrador del sistema.</p>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a class="btn btn-primary" asp-controller="Solicitudes" asp-action="Index">Volver a Mis Solicitudes</a>
+    }
+    else
+    {
+        <a class="btn btn-primary" asp-area="Identity" asp-page="/Account/Login">Iniciar sesión</a>
+    }
+
+    <a class="btn btn-outline-secondary" asp-controller="Home" asp-action="Index">Ir al inicio</a>
+</div>
